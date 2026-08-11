@@ -1,0 +1,16 @@
+{
+  "id": "com.dev.tkinter.vncviewer",
+  "name": "Tkinter GUI Viewer",
+  "version": "1.0.0",
+  "description": "View Python Tkinter GUIs through VNC directly in Xed Editor. Perfect for testing GUI applications on your Android device.",
+  "author": {
+    "displayName": "Xed Developer",
+    "github": "xed-tkinter-viewer"
+  },
+  "mainClass": "tkinter.extension.TkinterViewerExtension",
+  "minAppVersion": 3,
+  "repository": "https://github.com/xed-tkinter-viewer/extension",
+  "license": "MIT",
+  "tags": ["tkinter", "python", "gui", "vnc", "viewer"],
+  "hasSettings": true
+}

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+<title>Tkinter VNC Viewer Pro</title>
+<style>
+  * { box-sizing: border-box; }
+  
+  html, body { 
+    margin: 0; 
+    padding: 0; 
+    height: 100%; 
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+    color: #e4e6eb; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ============ MOBILE-FIRST RESPONSIVE DESIGN ============ */
+  
+  /* Top toolbar - adapts to screen size */
+  #bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: linear-gradient(180deg, #1a2035 0%, #151b28 100%);
+    align-items: center;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10;
+    flex: 0 0 auto;
+    transition: padding 0.2s ease;
+  }
+
+  /* Collapsed state: slim toolbar for more screen space */
+  #bar.collapsed {
+    padding: 4px 8px;
+  }
+  #bar.collapsed .input-group,
+  #bar.collapsed #status span:last-child {
+    display: none;
+  }
+  #bar.collapsed #status {
+    flex-basis: auto;
+    margin-top: 0;
+    padding: 4px 6px;
+  }
+
+  #toggleBar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+    padding: 6px 8px !important;
+    order: -1;
+    flex-shrink: 0;
+  }
+  
+  /* Input container - stacks on mobile, horizontal on desktop */
+  .input-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+    min-width: 120px;
+    order: 3;
+  }
+  
+  #bar input {
+    flex: 1;
+    min-width: 60px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e4e6eb;
+    font-size: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(4px);
+  }
+  
+  #bar input:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  #bar input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+  
+  #bar input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Buttons - Mobile first: larger, more touch-friendly */
+  #bar button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 36px;
+    min-height: 44px; /* iOS touch target minimum */
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  
+  #bar button:hover:not(:active) {
+    background: linear-gradient(135deg, #6366f1 0%, #60a5fa 100%);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  #bar button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+  }
+  
+  #kbdBtn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    margin-left: auto;
+    order: 4;
+  }
+  
+  #kbdBtn:hover:not(:active) {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+  
+  /* SVG icon styles */
+  button svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  
+  /* Status display - compact and responsive */
+  #status {
+    font-size: 11px;
+    padding: 6px 10px;
+    color: #8b94a8;
+    font-weight: 500;
+    flex-basis: 100%;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    border-left: 2px solid #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    margin-top: 6px;
+    order: 5;
+    width: 100%;
+  }
+  
+  #status.connected {
+    color: #86efac;
+    border-left-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+  
+  #status.connecting {
+    color: #fbbf24;
+    border-left-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+  }
+  
+  #status.error {
+    color: #fca5a5;
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+  
+  /* Screen area - takes all remaining space */
+  #screen {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #screen canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Debug panel - compact */
+  #debug {
+    font-size: 10px;
+    padding: 0 10px;
+    color: #4ade80;
+    background: rgba(15, 23, 42, 0.8);
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    white-space: pre-wrap;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    max-height: 0;
+    overflow-y: auto;
+    flex: 0 0 auto;
+    transition: max-height 0.2s ease, padding 0.2s ease;
+  }
+
+  #debug.has-content {
+    padding: 5px 10px;
+    max-height: 40px;
+  }
+  
+  /* Size badge */
+  #sizeBadge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+  }
+  
+  #sizeBadge.own-size {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+  }
+  
+  /* Blank desktop hint */
+  #hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #cbd5e1;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    max-width: 90%;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    z-index: 4;
+    display: none;
+  }
+  
+  #hint strong {
+    color: #fbbf24;
+  }
+  
+  #hint code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  }
+
+  /* Keyboard input (hidden from view) */
+  #kbdInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    left: -1000px;
+    opacity: 0;
+  }
+
+  /* ============ RESPONSIVE BREAKPOINTS ============ */
+  
+  /* Tablets (600px+) */
+  @media (min-width: 600px) {
+    #bar {
+      padding: 6px 10px;
+      gap: 8px;
+    }
+
+    #bar button {
+      padding: 6px 14px;
+      font-size: 12px;
+      height: 32px;
+      min-height: unset;
+    }
+
+    .input-group {
+      min-width: 180px;
+      order: 2;
+    }
+
+    #status {
+      flex-basis: auto;
+      margin-top: 0;
+      height: 32px;
+      padding: 4px 10px;
+      order: 3;
+    }
+  }
+
+  /* Small desktops (800px+) */
+  @media (min-width: 800px) {
+    #bar {
+      padding: 5px 8px;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+
+    .input-group {
+      flex: 1;
+      min-width: 150px;
+      order: 1;
+      gap: 8px;
+    }
+
+    #bar button {
+      padding: 6px 12px;
+      font-size: 12px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    #status {
+      flex-basis: auto;
+      margin-top: 0;
+      order: 3;
+      height: 32px;
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+
+    #kbdBtn {
+      order: 4;
+    }
+
+    #toggleBar {
+      order: 5;
+    }
+  }
+
+  /* Large desktops (1200px+) */
+  @media (min-width: 1200px) {
+    #bar {
+      padding: 5px 8px;
+      gap: 6px;
+    }
+
+    #bar input {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+
+    #bar button {
+      padding: 6px 12px;
+      font-size: 12px;
+      height: 32px;
+    }
+
+    .input-group {
+      min-width: 200px;
+    }
+  }
+
+  /* Landscape mode optimization (height constraint) */
+  @media (max-height: 500px) {
+    #bar {
+      padding: 4px 6px;
+      gap: 4px;
+    }
+
+    #bar button {
+      padding: 4px 8px;
+      font-size: 11px;
+      height: 28px;
+      min-height: unset;
+    }
+
+    #bar input {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    #status {
+      font-size: 10px;
+      padding: 2px 8px;
+      height: 24px;
+    }
+
+    button svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  /* Mobile landscape (width > height) */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #bar {
+      padding: 3px 6px;
+      gap: 4px;
+    }
+
+    #bar button {
+      padding: 4px 10px;
+      font-size: 11px;
+      height: 26px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div id="bar">
+    <button id="toggleBar" title="Toggle toolbar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="input-group">
+      <input type="text" id="hostInput" placeholder="Host" value="127.0.0.1" />
+      <input type="text" id="portInput" placeholder="Port" value="6080" />
+      <button id="connectBtn" title="Connect to VNC">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="15" cy="10" r="1"/>
+        </svg>
+        Connect
+      </button>
+    </div>
+    <div id="status"><span class="status-dot"></span><span>Ready</span></div>
+    <button id="kbdBtn" title="Show keyboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="2" y="2" width="20" height="12" rx="2" ry="2"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="6" y1="11" x2="6" y2="11"/><line x1="10" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="14" y2="11"/><line x1="18" y1="11" x2="18" y2="11"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="screen">
+    <div id="hint"></div>
+    <div id="sizeBadge" style="display: none;"></div>
+  </div>
+
+  <div id="debug"></div>
+
+  <input type="text" id="kbdInput" autocapitalize="off" autocorrect="off" spellcheck="false" />
+
+  <script type="module">
+    import RFB from 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js';
+
+    // ============ DOM ELEMENTS & STATE ============
+    const params = new URLSearchParams(location.search);
+    const barEl = document.getElementById('bar');
+    const toggleBar = document.getElementById('toggleBar');
+    const hostInput = document.getElementById('hostInput');
+    const portInput = document.getElementById('portInput');
+    const connectBtn = document.getElementById('connectBtn');
+    const statusEl = document.getElementById('status');
+    const kbdBtn = document.getElementById('kbdBtn');
+    const kbdInput = document.getElementById('kbdInput');
+    const screenEl = document.getElementById('screen');
+    const debugEl = document.getElementById('debug');
+    const hintEl = document.getElementById('hint');
+    const sizeBadge = document.getElementById('sizeBadge');
+
+    let rfb = null;
+    let stallTimer = null;
+    let paintWatchTimer = null;
+    let lastUpdateAt = 0;
+    let hasCodeSize = false;
+
+    // ============ TOOLBAR COLLAPSE TOGGLE ============
+    let isBarCollapsed = false;
+    
+    function setBarCollapsed(collapsed) {
+      isBarCollapsed = collapsed;
+      if (collapsed) {
+        barEl.classList.add('collapsed');
+      } else {
+        barEl.classList.remove('collapsed');
+      }
+    }
+
+    toggleBar.addEventListener('click', () => {
+      setBarCollapsed(!isBarCollapsed);
+    });
+
+    // ============ UTILITY FUNCTIONS ============
+    function showSizeBadge(w, h, isOwnSize = true) {
+      sizeBadge.textContent = `${w}×${h}`;
+      if (isOwnSize) {
+        sizeBadge.classList.add('own-size');
+      } else {
+        sizeBadge.classList.remove('own-size');
+      }
+      sizeBadge.style.display = 'block';
+    }
+
+    function clearHintTimer() {
+      if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+    }
+
+    function clearPaintWatcher() {
+      if (paintWatchTimer) { clearTimeout(paintWatchTimer); paintWatchTimer = null; }
+    }
+
+    function canvasHasVisibleContent(canvas) {
+      try {
+        const ctx = canvas.getContext('2d');
+        const cw = canvas.width, ch = canvas.height;
+        if (cw < 2 || ch < 2) return false;
+        const cols = 10, rows = 10;
+        let r0 = null, g0 = null, b0 = null;
+        for (let gy = 0; gy < rows; gy++) {
+          for (let gx = 0; gx < cols; gx++) {
+            const x = Math.min(cw - 1, Math.floor((gx + 0.5) * cw / cols));
+            const y = Math.min(ch - 1, Math.floor((gy + 0.5) * ch / rows));
+            const d = ctx.getImageData(x, y, 1, 1).data;
+            if (r0 === null) { r0 = d[0]; g0 = d[1]; b0 = d[2]; continue; }
+            if (d[0] !== r0 || d[1] !== g0 || d[2] !== b0) return true;
+          }
+        }
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function startPaintWatcher() {
+      clearPaintWatcher();
+      const canvas = screenEl.querySelector('canvas');
+      if (canvas && canvasHasVisibleContent(canvas)) {
+        lastUpdateAt = Date.now();
+        clearHintTimer();
+        hintEl.style.display = 'none';
+      }
+      if (!rfb) return;
+      paintWatchTimer = setTimeout(startPaintWatcher, 400);
+    }
+
+    function armStallDetector() {
+      clearHintTimer();
+      hintEl.style.display = 'none';
+      stallTimer = setTimeout(() => {
+        if (rfb && lastUpdateAt === 0) {
+          hintEl.innerHTML = `
+            <strong>Connected, but no visible content yet.</strong><br>
+            Make sure: (1) VNC server is running on the correct display,
+            (2) Window manager (fluxbox) is running, and (3) Your Python script
+            is running in the same sandbox with the correct <code>DISPLAY</code> variable.
+          `;
+          hintEl.style.display = 'block';
+        }
+      }, 4000);
+    }
+
+    function updateStatus(text, state = 'connecting') {
+      statusEl.className = 'status-' + state;
+      statusEl.innerHTML = `<span class="status-dot"></span><span>${text}</span>`;
+    }
+
+    function connect() {
+      if (rfb) {
+        try { rfb.disconnect(); } catch (e) {}
+        rfb = null;
+      }
+      clearHintTimer();
+      clearPaintWatcher();
+      hintEl.style.display = 'none';
+      lastUpdateAt = 0;
+      debugEl.textContent = '';
+      const host = (hostInput.value.trim() || '127.0.0.1').replace(/[^a-zA-Z0-9.\-]/g, '');
+      let port = portInput.value.trim() || '6080';
+      port = /^\d{1,5}$/.test(port) ? port : '6080';
+      const url = `ws://${host}:${port}/`;
+      updateStatus(`Connecting to ${host}:${port}...`, 'connecting');
+
+      try {
+        rfb = new RFB(screenEl, url);
+        rfb.scaleViewport = true;
+        rfb.resizeSession = true;
+
+        rfb.addEventListener('connect', () => {
+          updateStatus(`Connected to ${host}:${port}`, 'connected');
+          armStallDetector();
+          startPaintWatcher();
+          setBarCollapsed(true);
+        });
+        rfb.addEventListener('disconnect', (e) => {
+          const msg = e.detail && e.detail.clean === false ? 'Disconnected (error)' : 'Disconnected';
+          updateStatus(msg, 'error');
+          clearHintTimer();
+          clearPaintWatcher();
+          hintEl.style.display = 'none';
+          setBarCollapsed(false);
+        });
+        rfb.addEventListener('credentialsrequired', () => {
+          const pass = prompt('VNC password:');
+          if (pass !== null) rfb.sendCredentials({ password: pass });
+        });
+        rfb.addEventListener('desktopname', (e) => {
+          debugEl.textContent = '📺 Remote: ' + e.detail.name;
+        });
+        rfb.addEventListener('capabilities', () => {
+          const w = rfb._fbWidth || (rfb._canvas && rfb._canvas.width);
+          const h = rfb._fbHeight || (rfb._canvas && rfb._canvas.height);
+          if (w && h) {
+            debugEl.textContent += `  •  ${w}×${h}`;
+            if (!hasCodeSize) showSizeBadge(w, h, false);
+          }
+        });
+      } catch (err) {
+        updateStatus('Error: ' + err.message, 'error');
+      }
+    }
+
+    connectBtn.addEventListener('click', connect);
+
+    // ============ KEYBOARD INPUT HANDLING ============
+    const NAMED_KEYSYMS = {
+      Backspace: 0xff08, Tab: 0xff09, Enter: 0xff0d, Escape: 0xff1b,
+      Delete: 0xffff, Home: 0xff50, End: 0xff57,
+      ArrowLeft: 0xff51, ArrowUp: 0xff52, ArrowRight: 0xff53, ArrowDown: 0xff54,
+      PageUp: 0xff55, PageDown: 0xff56,
+    };
+
+    function unicodeToKeysym(cp) {
+      if (cp < 0x100) return cp;
+      return 0x01000000 + cp;
+    }
+
+    function sendChar(ch) {
+      if (!rfb || !ch) return;
+      const cp = ch.codePointAt(0);
+      rfb.sendKey(unicodeToKeysym(cp), null);
+    }
+
+    function setKeyboardVisible(visible) {
+      if (visible) {
+        kbdInput.value = '';
+        kbdInput.focus();
+        kbdBtn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+      } else {
+        kbdInput.blur();
+        kbdBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      }
+    }
+
+    kbdBtn.addEventListener('click', () => {
+      setKeyboardVisible(document.activeElement !== kbdInput);
+    });
+
+    screenEl.addEventListener('touchstart', () => setKeyboardVisible(true), { passive: true });
+    screenEl.addEventListener('mousedown', () => setKeyboardVisible(true));
+
+    kbdInput.addEventListener('keydown', (e) => {
+      const keysym = NAMED_KEYSYMS[e.key];
+      if (keysym && rfb) {
+        e.preventDefault();
+        rfb.sendKey(keysym, e.code || null);
+      }
+    });
+
+    kbdInput.addEventListener('input', (e) => {
+      const data = e.data;
+      if (data) {
+        for (const ch of data) sendChar(ch);
+      } else if (e.inputType === 'deleteContentBackward') {
+        if (rfb) rfb.sendKey(NAMED_KEYSYMS.Backspace, null);
+      } else if (e.inputType === 'insertLineBreak') {
+        if (rfb) rfb.sendKey(NAMED_KEYSYMS.Enter, null);
+      }
+      kbdInput.value = '';
+    });
+
+    // ============ MESSAGE HANDLING ============
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'tkinter-vnc-disconnect' && rfb) {
+        try { rfb.disconnect(); } catch (err) {}
+        rfb = null;
+      }
+    });
+
+    // Auto-connect if passed in query string
+    if (params.get('autoconnect') === '1') connect();
+  </script>
+</body>
+</html>
