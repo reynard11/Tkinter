@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ main, develop, master ]
-  pull_request:
-    branches: [ main, develop, master ]
 
 jobs:
   build:
@@ -12,26 +10,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
         java-version: '11'
-        distribution: 'temurin'
-        cache: gradle
+        distribution: 'adopt'
     
     - name: Make gradlew executable
       run: chmod +x ./gradlew
     
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+    - name: Build APK
+      run: ./gradlew assembleDebug --stacktrace
     
-    - name: Build Release APK
-      run: ./gradlew assembleRelease
-      continue-on-error: true
-    
-    - name: Upload APKs
-      uses: actions/upload-artifact@v3
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      if: success()
       with:
-        name: apk-artifacts
-        path: app/build/outputs/apk/
+        name: app-debug
+        path: '**/build/outputs/apk/**/*.apk'
