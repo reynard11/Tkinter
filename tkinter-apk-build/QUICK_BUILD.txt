@@ -1,0 +1,96 @@
+═══════════════════════════════════════════════════════════════
+  TKINTER VNC VIEWER - APK BUILD (On Your Phone)
+═══════════════════════════════════════════════════════════════
+
+📱 SETUP (Run ONCE in XED Terminal)
+───────────────────────────────────────────────────────────────
+
+1. Install requirements:
+   apt install wget unzip openjdk-21-jdk gradle -y
+
+2. Verify:
+   java -version
+   gradle --version
+
+═══════════════════════════════════════════════════════════════
+
+🔨 BUILD YOUR APK (Run in XED Terminal)
+───────────────────────────────────────────────────────────────
+
+1. Navigate to project:
+   cd ~/path/to/tkinter-apk
+
+2. Build:
+   gradle clean build
+
+3. Wait... (First build: 3-5 min, Subsequent: 1-2 min)
+
+4. Find APK:
+   ls -la app/build/outputs/apk/*/
+
+═══════════════════════════════════════════════════════════════
+
+✅ INSTALL & RUN
+───────────────────────────────────────────────────────────────
+
+Option A - Using ADB:
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+Option B - Manual:
+   1. Copy APK to phone storage
+   2. Open file manager
+   3. Tap APK to install
+   4. Allow from unknown sources
+   5. Open app!
+
+═══════════════════════════════════════════════════════════════
+
+❌ TROUBLESHOOTING
+───────────────────────────────────────────────────────────────
+
+"gradle: command not found"
+→ apt install gradle -y
+
+"java: command not found"
+→ apt install openjdk-21-jdk -y
+
+"OutOfMemory error"
+→ gradle clean build -Dorg.gradle.parallel=false
+
+Build too slow?
+→ gradle clean build --offline
+
+═══════════════════════════════════════════════════════════════
+
+📝 PROJECT FILES
+───────────────────────────────────────────────────────────────
+
+✓ build.gradle.kts      ← Main build configuration
+✓ settings.gradle       ← Project structure
+✓ gradle.properties     ← Build options
+✓ AndroidManifest.xml   ← App permissions & activities
+✓ src/                  ← Kotlin source code
+✓ proguard-rules.pro    ← Code optimization
+✓ BUILD_GUIDE.md        ← Detailed guide
+
+═══════════════════════════════════════════════════════════════
+
+🎯 WHAT YOU GET
+───────────────────────────────────────────────────────────────
+
+APK FILE LOCATION (after build):
+   app/build/outputs/apk/debug/app-debug.apk
+
+FILE SIZE: ~15-20 MB
+SUPPORTS: Android 5.0+ (API 21+)
+FEATURES:
+   ✓ View Tkinter GUIs via VNC
+   ✓ WebSocket connection
+   ✓ Auto VNC server setup
+   ✓ Full color support
+
+═══════════════════════════════════════════════════════════════
+
+Need help? Check BUILD_GUIDE.md for detailed instructions!
+
+═══════════════════════════════════════════════════════════════
